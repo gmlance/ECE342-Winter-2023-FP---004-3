@@ -20,7 +20,7 @@ void loop() {
    analog_value = analogRead(A0);
    temp = (analog_value * 5.0) / 1024.0; 
    voltage = temp/(0.0909);
-   if (voltage < 0.1) {
+   if (voltage < 2 | voltage > 14 ) {
      voltage=0.0;
    } 
     lcd.clear();
