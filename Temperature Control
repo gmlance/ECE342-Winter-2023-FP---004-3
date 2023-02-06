@@ -16,7 +16,7 @@ DallasTemperature sensors(&oneWire);
 const int pin9 = 9;
 const double EXTRA_HIGH_TEMP = 110;
 const double HIGH_TEMP = 105;
-const double LOW_TEMP = 75;
+const double LOW_TEMP = 80;
 const double MID_TEMP = 90;
 void setup(void) 
 { 
@@ -32,22 +32,22 @@ void loop(void)
 {
 
 // Send the command to get temperatures
-  sensors.requestTemperatures();
-  Serial.print("Temperature is: ");
-  Serial.println(sensors.getTempFByIndex(0)); // You can have more than one IC on the same bus. 0 refers to the first IC on the wire ---> still trying to figure out what this means
+  //sensors.requestTemperatures();
+  //Serial.print("Temperature is: ");
+  //Serial.println(sensors.getTempFByIndex(0)); // You can have more than one IC on the same bus. 0 refers to the first IC on the wire ---> still trying to figure out what this means
   if (sensors.getTempFByIndex(0) > EXTRA_HIGH_TEMP ) {
     digitalWrite(pin9,LOW); // An example for how we could turn off/on the relays using a polling method
     Serial.print("High Temperature - input/output has shut off"); //warnings printed for different temperature ranges
     Serial.println();
-} else if (sensors.getTempFByIndex(0) < HIGH_TEMP ) {
+} else if (sensors.getTempFByIndex(0) > HIGH_TEMP ) {
     Serial.print("Approaching Unsafe Temperature - input/output will turn off soon");
     Serial.println();
-}
-} else if (sensors.getTempFByIndex(0) < MID_TEMP ) {
+
+} else if (sensors.getTempFByIndex(0) > MID_TEMP ) {
     digitalWrite(pin9, HIGH);
     Serial.print("Device Temperature Increasing");
     Serial.println();
-}
+
 } else if (sensors.getTempFByIndex(0) < LOW_TEMP ) {
     digitalWrite(pin9, HIGH);
     Serial.print("Safe Temperature");
