@@ -45,8 +45,9 @@ void loop(void)
     }
 
 } else if (sensors.getTempFByIndex(0) > HIGH_TEMP ) {
-
-      if (sensors.getTempFByIndex(0) > 105) {
+     delay(1000);
+      
+     if (sensors.getTempFByIndex(0) > 105) {
       Serial.print("Approaching Unsafe Temperature - input/output will turn off soon"); //warnings printed for different temperature ranges
       Serial.println();
     }
