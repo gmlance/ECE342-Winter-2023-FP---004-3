@@ -36,12 +36,20 @@ void loop(void)
   //Serial.print("Temperature is: ");
   //Serial.println(sensors.getTempFByIndex(0)); // You can have more than one IC on the same bus. 0 refers to the first IC on the wire ---> still trying to figure out what this means
   if (sensors.getTempFByIndex(0) > EXTRA_HIGH_TEMP ) {
-    digitalWrite(pin9,LOW); // An example for how we could turn off/on the relays using a polling method
-    Serial.print("High Temperature - input/output has shut off"); //warnings printed for different temperature ranges
-    Serial.println();
+    delay(1000); //wait to see if bogus value
+
+    if (sensors.getTempFByIndex(0) > 110) {
+      digitalWrite(pin9,LOW); // An example for how we could turn off/on the relays using a polling method
+      Serial.print("High Temperature - input/output has shut off"); //warnings printed for different temperature ranges
+      Serial.println();
+    }
+
 } else if (sensors.getTempFByIndex(0) > HIGH_TEMP ) {
-    Serial.print("Approaching Unsafe Temperature - input/output will turn off soon");
-    Serial.println();
+
+      if (sensors.getTempFByIndex(0) > 105) {
+      Serial.print("Approaching Unsafe Temperature - input/output will turn off soon"); //warnings printed for different temperature ranges
+      Serial.println();
+    }
 
 } else if (sensors.getTempFByIndex(0) > MID_TEMP ) {
     digitalWrite(pin9, HIGH);
