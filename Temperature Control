@@ -4,7 +4,7 @@
 #include <DallasTemperature.h>
 /********************************************************************/
 // Data wire is plugged into pin 2 on the Arduino 
-#define ONE_WIRE_BUS 2 
+#define ONE_WIRE_BUS 4 
 /********************************************************************/
 // Setup a oneWire instance to communicate with any OneWire devices  
 // (not just Maxim/Dallas temperature ICs) 
@@ -27,37 +27,43 @@ void setup(void)
 
  // Start up the library 
  sensors.begin(); 
+ delay(2000);
+ sensors.requestTemperatures();
 } 
 void loop(void)
 {
-
+float tempin = sensors.getTempFByIndex(0);
 // Send the command to get temperatures
   //sensors.requestTemperatures();
   //Serial.print("Temperature is: ");
-  //Serial.println(sensors.getTempFByIndex(0)); // You can have more than one IC on the same bus. 0 refers to the first IC on the wire ---> still trying to figure out what this means
-  if (sensors.getTempFByIndex(0) > EXTRA_HIGH_TEMP ) {
+  Serial.println(tempin); // You can have more than one IC on the same bus. 0 refers to the first IC on the wire ---> still trying to figure out what this means
+  delay(1000);
+   sensors.requestTemperatures();
+  if (tempin > EXTRA_HIGH_TEMP ) {
     delay(1000); //wait to see if bogus value
 
-    if (sensors.getTempFByIndex(0) > 110) {
+    if (tempin > 110) {
       digitalWrite(pin9,LOW); // An example for how we could turn off/on the relays using a polling method
       Serial.print("High Temperature - input/output has shut off"); //warnings printed for different temperature ranges
       Serial.println();
     }
 
-} else if (sensors.getTempFByIndex(0) > HIGH_TEMP ) {
+} else if (tempin > HIGH_TEMP ) {
      delay(1000);
       
-     if (sensors.getTempFByIndex(0) > 105) {
+     if (tempin > 105) {
       Serial.print("Approaching Unsafe Temperature - input/output will turn off soon"); //warnings printed for different temperature ranges
       Serial.println();
     }
 
-} else if (sensors.getTempFByIndex(0) > MID_TEMP ) {
+} else if (tempin > MID_TEMP ) {
+    delay(1000);
     digitalWrite(pin9, HIGH);
     Serial.print("Device Temperature Increasing");
     Serial.println();
 
-} else if (sensors.getTempFByIndex(0) < LOW_TEMP ) {
+} else if (tempin < LOW_TEMP ) {
+    delay(1000);
     digitalWrite(pin9, HIGH);
     Serial.print("Safe Temperature");
     Serial.println();
