@@ -6,10 +6,12 @@
 
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
-//pin settings for counter
-int h=12;
+//pin settings for counter from
+int h;
 int m;
 int s;
+int sc;
+int mc;
 int flag;
 int TIME;
 
@@ -18,6 +20,8 @@ const int ms=9;
 
 int state1;
 int state2;
+
+String vr="Your desired voltage is ";
 
 void setup()
 {
@@ -52,37 +56,80 @@ void setup()
   delay(1000);  
   lcd.clear();
 
-
+//initialize serial
+  Serial.begin(9600);
   //setup for the counter
   pinMode(hs,INPUT_PULLUP);
   pinMode(ms,INPUT_PULLUP);
+
 }
 
 
 void loop()
 {
-  //channel 1 counter
+  Serial.println("Enter channel 1 voltage: ");
+  //h=0;
+  lcd.setCursor(0,0);
+  lcd.print("CH1 VALUE-(OoO)-");
+  while(Serial.available()==0){
+    
+  }
+  //channel 1 value
   lcd.setCursor(10,0);
-  s=s+1;
-  delay(1000);
-  lcd.setCursor(10,1);
-  m=m+1;
-  delay(1000);
+  s=Serial.parseInt();
+  Serial.println(vr+s);
+  
   if(s>14){
+    //lcd.clear();
+    Serial.println("Voltage is too high");    
+    lcd.setCursor(0,0);
+    lcd.print("CH1 RISKY(0o0)  ");
+    lcd.setCursor(0,0);
+  }
+  else if(s<2){
+    Serial.println("Voltage is too low");    
+    lcd.setCursor(0,0);
+    lcd.print("CH1 SMALL(-_-)  ");
+  }
+
+  Serial.println("Enter channel 2 voltage: ");
+  lcd.setCursor(0,1);
+  lcd.print("CH2 VALUE-(OoO)-");
+  while(Serial.available()==0){
+    
+  }
+  //lcd.setCursor(10,0);
+  m=Serial.parseInt();
+  Serial.println(vr+m);
+
+  if(m>14){
+   //lcd.clear();
+   Serial.println("Voltage is too high");    
+   lcd.setCursor(0,1);
+   lcd.print("CH2 RISKY(0o0)  ");
+   lcd.setCursor(0,1);
+  }
+  else if(m<2){
+    //lcd.clear();
+    Serial.println("Voltage is too low");   
+    lcd.setCursor(0,0);
+    lcd.print("CH2 SMALL(-_-)  ");
+  }
+  h=0;
+  
+  while(h!=1 && s>0 && m>0){
+    lcd.clear();  
+if(s>14){
     lcd.setCursor(10,0);
-    lcd.print("HIGH  ");
+    lcd.print("HIGH   ");
     lcd.setCursor(0,0);
     lcd.print("Channel 1:");
-    s=0;
-    //s=s+1;
   }
   else if(s<2){
     lcd.setCursor(10,0);
     lcd.print("LOW    ");
     lcd.setCursor(0,0);
     lcd.print("Channel 1:");
-    s=0;
-    s=s+1; 
   }
   else{
     lcd.setCursor(0,0);
@@ -98,19 +145,15 @@ void loop()
 //channel 2 if statements
   if(m>14){
     lcd.setCursor(10,1);
-    lcd.print("HIGH  ");
+    lcd.print("HIGH    ");
     lcd.setCursor(0,1);
     lcd.print("Channel 2:");
-    m=0;
-    //m=m+1;
   }
   else if(m<2){
     lcd.setCursor(10,1);
     lcd.print("LOW    ");
     lcd.setCursor(0,1);
     lcd.print("Channel 2:");
-    m=0;
-    m=m+1; 
   }
   else{
     lcd.setCursor(0,1);
@@ -120,6 +163,18 @@ void loop()
     lcd.setCursor(10,1);
     lcd.print("     ");
     lcd.setCursor(13,1);    
-    lcd.print(s);    
+    lcd.print(m);    
+  }
+  Serial.println("Would you like to enter a new set of values? Enter 0");
+  while(Serial.available()==0){
+    
+  }
+  //channel 1 value
+  lcd.setCursor(10,0);
+  h=Serial.parseInt();
+  if(h==0){
+    lcd.clear();
+    h=1;
+  }
   }
 }
