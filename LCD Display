@@ -1,38 +1,125 @@
-/*adapted code from Electronics Hub (https://www.electronicshub.org/digital-arduino-voltmeter/)*/
-#include "LiquidCrystal.h"
+//YWROBOT
+//Compatible with the Arduino IDE 1.0
+//Library version:1.1
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
 
-LiquidCrystal lcd(2, 3, 4, 5, 6, 7);
+LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
-float voltage = 0.0;
-float temp=0.0;
-int analog_value;
+//pin settings for counter
+int h=12;
+int m;
+int s;
+int flag;
+int TIME;
 
-void setup(){
-   lcd.begin(16, 2); 
-   lcd.setCursor (0,0);
-   lcd.print(" LCD Display ");
-   lcd.setCursor(0,1); 
-   lcd.print("DC Power Supply");
-   delay(2000);
+const int hs=8;
+const int ms=9;
+
+int state1;
+int state2;
+
+void setup()
+{
+  lcd.init();                      // initialize the lcd 
+  lcd.init();
+  // Print a message to the LCD.
+  lcd.backlight();
+
+  //welcome animation
+  lcd.setCursor(0,1);
+  lcd.print("(.-_-.)");
+  delay(1000);
+  lcd.setCursor(0,1);
+  lcd.print("(.0_0.)");
+  lcd.setCursor(8,0);
+  lcd.print("OH HELLO");
+  delay(1000);
+  lcd.setCursor(4,0);
+  lcd.print("READY OR NOT");
+  lcd.setCursor(0,1);
+  lcd.print(" |-(.^-^.)/");
+  delay(1000);
+  lcd.setCursor(4,0);
+  lcd.print("READY OR NOT");
+  lcd.setCursor(0,1);
+  lcd.print(" |--(.^-^.)/");
+  delay(1000);
+  lcd.setCursor(0,0);
+  lcd.print("HERE WE VOLT!!!!");
+  lcd.setCursor(0,1);
+  lcd.print(" --(.^-^.)--");
+  delay(1000);  
+  lcd.clear();
+
+
+  //setup for the counter
+  pinMode(hs,INPUT_PULLUP);
+  pinMode(ms,INPUT_PULLUP);
 }
 
-void loop() {  
-   analog_value = analogRead(A0);
-   temp = (analog_value * 5.0) / 1024.0; 
-   voltage = temp/(0.0909);
-   if (voltage < 2 | voltage > 14 ) {
-     voltage=0.0;
-   } 
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Channel 1= ");
-    lcd.print(voltage);
-    lcd.setCursor(13,0);
+
+void loop()
+{
+  //channel 1 counter
+  lcd.setCursor(10,0);
+  s=s+1;
+  delay(1000);
+  lcd.setCursor(10,1);
+  m=m+1;
+  delay(1000);
+  if(s>14){
+    lcd.setCursor(10,0);
+    lcd.print("HIGH  ");
+    lcd.setCursor(0,0);
+    lcd.print("Channel 1:");
+    s=0;
+    //s=s+1;
+  }
+  else if(s<2){
+    lcd.setCursor(10,0);
+    lcd.print("LOW    ");
+    lcd.setCursor(0,0);
+    lcd.print("Channel 1:");
+    s=0;
+    s=s+1; 
+  }
+  else{
+    lcd.setCursor(0,0);
+    lcd.print("Channel 1:");
+    lcd.setCursor(15,0);
     lcd.print("V");
-    lcd.setCursor(0, 1);
-    lcd.print("Channel 2= ");
-    lcd.print(voltage);
-    lcd.setCursor(13,1);
+    lcd.setCursor(10,0);
+    lcd.print("     ");
+    lcd.setCursor(13,0);    
+    lcd.print(s);    
+  }
+  
+//channel 2 if statements
+  if(m>14){
+    lcd.setCursor(10,1);
+    lcd.print("HIGH  ");
+    lcd.setCursor(0,1);
+    lcd.print("Channel 2:");
+    m=0;
+    //m=m+1;
+  }
+  else if(m<2){
+    lcd.setCursor(10,1);
+    lcd.print("LOW    ");
+    lcd.setCursor(0,1);
+    lcd.print("Channel 2:");
+    m=0;
+    m=m+1; 
+  }
+  else{
+    lcd.setCursor(0,1);
+    lcd.print("Channel 2:");
+    lcd.setCursor(15,1);
     lcd.print("V");
-    delay(30);
+    lcd.setCursor(10,1);
+    lcd.print("     ");
+    lcd.setCursor(13,1);    
+    lcd.print(s);    
+  }
 }
