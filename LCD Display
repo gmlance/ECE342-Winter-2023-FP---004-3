@@ -56,8 +56,9 @@ void setup()
   delay(1000);  
   lcd.clear();
 
-//initialize serial
+  //initialize serial
   Serial.begin(9600);
+  
   //setup for the counter
   pinMode(hs,INPUT_PULLUP);
   pinMode(ms,INPUT_PULLUP);
@@ -67,6 +68,7 @@ void setup()
 
 void loop()
 {
+  //ask user to enter the channel 1 voltage
   Serial.println("Enter channel 1 voltage: ");
   //h=0;
   lcd.setCursor(0,0);
@@ -74,11 +76,13 @@ void loop()
   while(Serial.available()==0){
     
   }
-  //channel 1 value
+
+  //take in the channel 1 value
   lcd.setCursor(10,0);
   s=Serial.parseInt();
   Serial.println(vr+s);
   
+  //error handling for too high channel 1 voltage
   if(s>14){
     //lcd.clear();
     Serial.println("Voltage is too high");    
@@ -86,12 +90,14 @@ void loop()
     lcd.print("CH1 RISKY(0o0)  ");
     lcd.setCursor(0,0);
   }
+  //error handling for too low channel 1 voltage
   else if(s<2){
     Serial.println("Voltage is too low");    
     lcd.setCursor(0,0);
     lcd.print("CH1 SMALL(-_-)  ");
   }
 
+  
   Serial.println("Enter channel 2 voltage: ");
   lcd.setCursor(0,1);
   lcd.print("CH2 VALUE-(OoO)-");
@@ -102,36 +108,38 @@ void loop()
   m=Serial.parseInt();
   Serial.println(vr+m);
 
+  //error handling for too high channel 2 voltage
   if(m>14){
-   //lcd.clear();
    Serial.println("Voltage is too high");    
    lcd.setCursor(0,1);
    lcd.print("CH2 RISKY(0o0)  ");
    lcd.setCursor(0,1);
   }
+  //error handling for too low channel 2 voltage
   else if(m<2){
-    //lcd.clear();
     Serial.println("Voltage is too low");   
     lcd.setCursor(0,0);
     lcd.print("CH2 SMALL(-_-)  ");
   }
+  delay(1000);
   h=0;
   
+  //final value display print
   while(h!=1 && s>0 && m>0){
     lcd.clear();  
-if(s>14){
+  if(s>14){//error handling for too high channel 1 voltage
     lcd.setCursor(10,0);
     lcd.print("HIGH   ");
     lcd.setCursor(0,0);
     lcd.print("Channel 1:");
   }
-  else if(s<2){
+  else if(s<2){//error handling for too low channel 1 voltage
     lcd.setCursor(10,0);
     lcd.print("LOW    ");
     lcd.setCursor(0,0);
     lcd.print("Channel 1:");
   }
-  else{
+  else{//print for voltage within range of 2V to 14V 
     lcd.setCursor(0,0);
     lcd.print("Channel 1:");
     lcd.setCursor(15,0);
@@ -143,19 +151,19 @@ if(s>14){
   }
   
 //channel 2 if statements
-  if(m>14){
+  if(m>14){//error handling for too high channel 2 voltage
     lcd.setCursor(10,1);
     lcd.print("HIGH    ");
     lcd.setCursor(0,1);
     lcd.print("Channel 2:");
   }
-  else if(m<2){
+  else if(m<2){//error handling for too high channel 2 voltage
     lcd.setCursor(10,1);
     lcd.print("LOW    ");
     lcd.setCursor(0,1);
     lcd.print("Channel 2:");
   }
-  else{
+  else{//print for voltage within range of 2V to 14V
     lcd.setCursor(0,1);
     lcd.print("Channel 2:");
     lcd.setCursor(15,1);
