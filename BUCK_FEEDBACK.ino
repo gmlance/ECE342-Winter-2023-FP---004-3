@@ -21,8 +21,9 @@ void setup() {
 }
 
 void loop() {  
-  float voltage = analogRead(potentiometer);
+  //float voltage = analogRead(potentiometer);
   float output  = analogRead(feedback);
+  float voltage = 2.5;
 
   if (voltage > output)
    {
@@ -36,5 +37,5 @@ void loop() {
     pwm = constrain(pwm, 1, 254);
    }
 
-   analogWrite(PWM,pwm);
+   analogWrite(PWM,125);
 }
