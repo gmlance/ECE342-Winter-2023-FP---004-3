@@ -263,26 +263,26 @@ void write_lcd() {
   //h=0;
   lcd.setCursor(0,0);
   lcd.print("CH1 VALUE-(OoO)-");
-  while(Serial.available()==0){
+//   while(Serial.available()==0){
     
-  }
+//   }
 
-  //take in the channel 1 value and displaying it to the screen
+//   //take in the channel 1 value and displaying it to the screen
   lcd.setCursor(10,0);
-  s=Serial.parseInt();
-  Serial.println(vr+s);
+  s=dmm_out1;
+  //Serial.println(vr+s);
   
   //error handling for too high channel 1 voltage
   if(s>14){
     //lcd.clear();
-    Serial.println("Voltage is too high");    
+    //Serial.println("Voltage is too high");    
     lcd.setCursor(0,0);
     lcd.print("CH1 RISKY(0o0)  ");
     lcd.setCursor(0,0);
   }
   //error handling for too low channel 1 voltage
   else if(s<2){
-    Serial.println("Voltage is too low");    
+    //Serial.println("Voltage is too low");    
     lcd.setCursor(0,0);
     lcd.print("CH1 SMALL(-_-)  ");
   }
@@ -292,19 +292,19 @@ void write_lcd() {
     
   }
   //lcd.setCursor(10,0);
-  m=Serial.parseInt();
-  Serial.println(vr+m);
+  m=dmm_out2;
+ // Serial.println(vr+m);
 
   //error handling for too high channel 2 voltage
   if(m>14){
-   Serial.println("Voltage is too high");    
+   //Serial.println("Voltage is too high");    
    lcd.setCursor(0,1);
    lcd.print("CH2 RISKY(0o0)  ");
    lcd.setCursor(0,1);
   }
   //error handling for too low channel 2 voltage
   else if(m<2){
-    Serial.println("Voltage is too low");   
+    //Serial.println("Voltage is too low");   
     lcd.setCursor(0,0);
     lcd.print("CH2 SMALL(-_-)  ");
   }
@@ -360,13 +360,13 @@ void write_lcd() {
     lcd.setCursor(13,1);    
     lcd.print(m);    
   }
-  Serial.println("Would you like to enter a new set of values? Enter 0");
-  while(Serial.available()==0){
+  //Serial.println("Would you like to enter a new set of values? Enter 0");
+  //while(Serial.available()==0){
     
-  }
+  //}
   //channel 1 value
   lcd.setCursor(10,0);
-  h=Serial.parseInt();
+  //h=Serial.parseInt();
   if(h==0){
     lcd.clear();
     h=1;
