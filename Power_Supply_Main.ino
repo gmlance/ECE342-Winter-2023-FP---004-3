@@ -94,6 +94,21 @@ float max_current_in = 1000; //mA
 float max_current_out = 1500; //mA
 float max_temp = 120; //degrees F
 
+//constants defined for LCD
+int h;
+int m;
+int s;
+int sc;
+int mc;
+int flag;
+int TIME;
+const int hs=8;
+const int ms=9;
+int state1;
+int state2;
+String vr="Your desired voltage is ";
+
+
 void setup() {
   my_instrument.RegisterCommand(F("*IDN?"), &Identify);
   my_instrument.SetCommandTreeBase(F("SYSTem:DCSupply"));
