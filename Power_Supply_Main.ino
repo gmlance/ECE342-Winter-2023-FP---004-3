@@ -1,6 +1,5 @@
 /*
 PC Controlled Power Supply
-Uses SCPI parser by Vrekrer
 
 Hardware:
 3 INA219 current sensors
@@ -17,23 +16,41 @@ Hardware:
 SCPI Commands Supported:
   *IDN?
     identifies instrument
+  SYST:DCS:OUTP?
+    outputs the state of the power supply (all measured and maximum values)
   SYST:DCS:CH1:VOLT <value>
   SYST:DCS:CH2:VOLT <value>
     sets output voltage of selected channel, valid for [2,14] V
   SYST:DCS:CH1:VOLT?
   SYST:DCS:CH2:VOLT?
-    outputs channel voltages
-  SYST:DCS:CH1:OUTP
-  SYST:DCS:CH2:OUTP
-    toggles given channel output on/off
-  SYST:DCS:OUTP?
+    outputs selected channel voltages
   SYST:DCS:CH1:OUTP?
   SYST:DCS:CH2:OUTP?
-    outputs channel voltages and currents
+    outputs selected channel voltages and currents
+  SYST:DCS:CH1:CURR?
+  SYST:DCS:CH2:CURR?
+    outputs selected channel current
+  SYST:DCS:CH1:OUTP
+  SYST:DCS:CH2:OUTP
+    toggles selected channel output on/off
+  SYST:DCS:CH1:MAX:CURR?
+  SYST:DCS:CH2:MAX:CURR?
+    outputs the maximum current on selected channel
+  SYST:DCS:CH1:MAX:CURR
+  SYST:DCS:CH2:MAX:CURR
+    sets the maximum current on selected channel (maximum current cannot be set above 1500 mA)
+  SYST:DCS:TEMP?
+    outputs the current temperature and the maximum temperature
+  SYST:DCS:TEMP
+    sets the maximum temperature value (maximum temperature cannot be set above 120 degrees F)
+  SYST:DCS:POW?
+    toggles the input relay on/off
+  SYST:DCS:RES
+    sets all values back to their initial values and turns off relays
 */
 
 #include "Arduino.h"
-#include "Vrekrer_scpi_parser.h"
+#include "Vrekrer_scpi_parser.h" //SCPI parser by Vrecker
 #include <Adafruit_INA219.h> 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h> //by Frank de Brabander
@@ -68,6 +85,8 @@ const int relay_in = 7; //controls input relay
 const int dmm_in = A0; //gets voltage at input
 const int dmm_out1 = A1; //gets voltage at channel 1
 const int dmm_out2 = A2; //gets voltage at channel 2
+//A5 is SCL
+//A4 is SDA
 //Additional constants
 const float MAX_TEMP = 120; //absolute maximum temperature in degrees
 const float MAX_CURR = 1500; //absolute maximum current (mA)
@@ -95,10 +114,10 @@ float current_in = 0;
 float loadvoltage_in = 0;
 float temp = 0;
 //Max values
-float max_current_in = 1000; //mA
-float max_current_out1 = 1500; //mA
-float max_current_out2 = 1500; //mA
-float max_temp = 120; //degrees F
+const float max_current_in = 1000; //mA
+float max_current_out1 = MAX_CURR; //mA
+float max_current_out2 = MAX_CURR; //mA
+float max_temp = MAX_TEMP; //degrees F
 //PWM variables
 int PWM1;
 int PWM2;
@@ -107,12 +126,12 @@ void setup() {
   my_instrument.RegisterCommand(F("*IDN?"), &Identify);
   my_instrument.SetCommandTreeBase(F("SYSTem:DCSupply"));
     my_instrument.RegisterCommand(F("CH1:VOLTage"), &SetVoltage1);
-    my_instrument.RegisterCommand(F("CH1:VOLTage?"), &GetOutput);
+    my_instrument.RegisterCommand(F("CH1:VOLTage?"), &GetVoltage);
     my_instrument.RegisterCommand(F("CH1:CURRent?"), &GetOutput);
     my_instrument.RegisterCommand(F("CH2:VOLTage"), &SetVoltage2);
-    my_instrument.RegisterCommand(F("CH2:VOLTage?"), &GetOutput);
+    my_instrument.RegisterCommand(F("CH2:VOLTage?"), &GetVoltage);
     my_instrument.RegisterCommand(F("CH2:CURRent?"), &GetOutput);
-    my_instrument.RegisterCommand(F(":OUTput?"), &GetOutput);
+    my_instrument.RegisterCommand(F(":OUTput?"), &GetState);
     my_instrument.RegisterCommand(F(":CH1:OUTput?"), &GetOutput);
     my_instrument.RegisterCommand(F(":CH2:OUTput?"), &GetOutput);
     my_instrument.RegisterCommand(F(":CH1:OUTput"), &SetOutput1);
@@ -123,7 +142,8 @@ void setup() {
     my_instrument.RegisterCommand(F("CH2:MAXimum:CURRent"), &SetCurrent2); 
     my_instrument.RegisterCommand(F("TEMPerature?"), &GetTemp); 
     my_instrument.RegisterCommand(F("TEMPerature"), &SetTemp); 
-    my_instrument.RegisterCommand(F("INput?"), &GetInput); //19
+    my_instrument.RegisterCommand(F("POWer"), &ON_OFF); 
+    my_instrument.RegisterCommand(F("RESet"), &Reset); //20
 
   Serial.begin(9600);
   while (!Serial) {
@@ -135,15 +155,15 @@ void setup() {
   //Initialize I2C Sensors
   if (! ina219_out1.begin()) {
     Serial.println("Failed to find INA219 current sensor for channel 1\n");
-    while (1) { delay(10); }
+    //while (1) { delay(10); }
   }
   if (! ina219_out2.begin()) {
     Serial.println("Failed to find INA219 current sensor for channel 2\n");
-    while (1) { delay(10);}
+    //while (1) { delay(10);}
   } 
   if (! ina219_in.begin()) {
     Serial.println("Failed to find INA219 current sensor for input channel\n");
-    while (1) { delay(10);}
+    //while (1) { delay(10);}
   } 
   if (!tempsensor.begin(0x18)) {
     Serial.println("Failed to find MCP9808 temperature sensor\n");
@@ -292,7 +312,7 @@ void buck_converter_out2() {
   }
 }
 
-//LCD Functions
+//LCD Function
 void write_lcd() {
   lcd.setCursor(0,0);
   lcd.print("CH1 Voltage: " + String(loadvoltage_out1) + "V");
@@ -310,9 +330,6 @@ void SetVoltage1(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     var = String(parameters[0]).toFloat();
     if (var >= 2 & var <= 14) {
       voltage1 = var;
-      //if (output1 == 1){
-        //analogWrite(CH1, 255*((voltage1-2)/12));
-      //}
     }
     else {
       interface.println(F("\nVoltage must be between 2 and 14."));
@@ -325,9 +342,6 @@ void SetVoltage2(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     var = String(parameters[0]).toFloat();
     if (var >= 2 & var <= 14) {
       voltage2 = var;
-      //if (output2 == 1){
-        //analogWrite(CH2, (voltage2-2)/255);
-      //}
     }
     else {
       interface.println(F("\nVoltage must be between 2 and 14."));
@@ -352,25 +366,46 @@ void GetOutput(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   }
 }
 
-void SetOutput1(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+void GetVoltage(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   if (output1 == 0) {
-    output1 = 1;
-    //analogWrite(CH1, (voltage1-2)/255);
+    interface.println("\nChannel 1: OFF [" + String(voltage1) + " V]");
   }
   else {
-    output1 = 0;
-    //analogWrite(CH1, 0);
+    interface.println("\nChannel 1 Voltage: " + String(loadvoltage_out1) + " V");
+  }
+  if (output2 == 0) {
+    interface.println("Channel 2: OFF [" + String(voltage2) + " V]");
+  }
+  else {
+    interface.println("Channel 2 Voltage: " + String(voltage2) + " V");
+  }  
+}
+
+void SetOutput1(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  if (input == 0) {
+    interface.println("Power Supply is off.\n Use (SYST:DCS:POW) to turn on.");
+  }
+  else {
+    if (output1 == 0) {
+      output1 = 1;
+    }
+    else {
+      output1 = 0;
+    }
   }
 }
 
 void SetOutput2(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  if (output2 == 0) {
-    output2 = 1;
-    //analogWrite(CH2, (voltage2-2)/255);
+  if (input == 0) {
+    interface.println("Power Supply is off.\n Use (SYST:DCS:POW) to turn on.");
   }
   else {
-    output2 = 0;
-    //analogWrite(CH2, 0);
+    if (output2 == 0) {
+      output2 = 1;
+    }
+    else {
+      output2 = 0;
+    }
   }
 }
 
@@ -423,7 +458,53 @@ void SetTemp(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   }
 }
 
-void GetInput(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  interface.println("Input Voltage: " + String(loadvoltage_in) + " V");
-  interface.println("Input Current: " + String(current_in) + " mA");
+void ON_OFF(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  if (input == 0) { //if off turn input relay on
+    input = 1;
+  }
+  else { //if on turn everything off
+    input = 0;
+    output1 = 0;
+    output2 = 0;
+  }
+}
+
+void GetState (SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  if (input == 0) {
+    interface.println("\nPower Supply is off.");
+  }
+  else {
+    interface.println("\nInput Voltage: " + String(loadvoltage_in) + " V");
+    interface.println("Input Current: " + String(current_in) + " mA");
+    if (output1 == 0) {
+      interface.println("\nChannel 1: OFF [" + String(voltage1) + " V]");
+    }
+    else {
+      interface.println("\nChannel 1 Voltage: " + String(loadvoltage_out1) + " V");
+      interface.println("Channel 1 Current: " + String(current_out1) + "mA");
+    }
+    if (output2 == 0) {
+      interface.println("Channel 2: OFF [" + String(voltage2) + " V]");
+    }
+    else {
+      interface.println("Channel 2 Voltage: " + String(voltage2) + " V");
+      interface.println("Channel 2 Current: " + String(current_out2) + "mA");
+    }
+  }
+
+  //Print temperature
+  interface.println("Internal Temperature: " + String(temp) + " degrees F");  
+}
+
+void Reset (SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  float voltage1 = 2; //Set channel 1 voltage to 2V
+  int output1 = 0; //Turn off channel 1
+  float voltage2 = 2; //Set channel 2 voltage to 2V
+  int output2 = 0; //Turn off channel 2
+  int input = 0; //Turn off input relay
+  
+  //Reset maximum values
+  float max_current_out1 = MAX_CURR; //1500 mA
+  float max_current_out2 = MAX_CURR; //1500 mA
+  float max_temp = MAX_TEMP; //120 degrees F
 }
